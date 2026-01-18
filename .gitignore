@@ -1,0 +1,16 @@
+# macOS metadata files
+._*
+.DS_Store
+
+# PlatformIO
+.pio
+.pioenvs
+.piolibdeps
+libdeps
+other projects/
+.vscode/
+
+# Python
+.venv/
+__pycache__/
+build/
