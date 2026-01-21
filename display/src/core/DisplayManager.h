@@ -3,9 +3,8 @@
 
 #include <Arduino_GFX_Library.h>
 #include <lvgl.h>
-#include <eez-framework.h>
 #include "Config.h"
-#include "../drivers/touch.h"
+#include "TouchDriver.h"
 #include "../ui/ui.h"
 
 class DisplayManager {

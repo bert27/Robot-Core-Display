@@ -1,17 +1,19 @@
 #include "DisplayManager.h"
+#include "ESPNowManager.h"
+#include <WiFi.h>
 
 DisplayManager::DisplayManager() : bus(nullptr), gfx(nullptr), disp(nullptr), disp_draw_buf(nullptr), disp_draw_buf2(nullptr) {
 }
 
 bool DisplayManager::begin() {
-    delay(3000);
-    log_i(">>> HARDWARE INIT (Sync v3.2.1) <<<");
-    log_i("Configuring RGB Panel (16MHz Fast Mode + Bounce Buffer)...");
+    delay(5000); 
+    printf("\n\n>>> HARDWARE INIT (Sync v3.2.1) <<<\n");
+    printf("Configuring RGB Panel...\n");
     
     if (!psramFound()) {
-        log_e("ERROR: PSRAM not found!");
+        printf("ERROR: PSRAM not found!\n");
     } else {
-        log_i("OK: PSRAM active (%d bytes)", ESP.getPsramSize());
+        printf("OK: PSRAM active (%d bytes)\n", (int)ESP.getPsramSize());
     }
 
     
@@ -23,18 +25,18 @@ bool DisplayManager::begin() {
         0 /* hsync_polarity */, H_FRONT_PORCH, H_PULSE_WIDTH, H_BACK_PORCH,
         0 /* vsync_polarity */, V_FRONT_PORCH, V_PULSE_WIDTH, V_BACK_PORCH,
         PCLK_INV, PCLK_SPEED, false /* useBigEndian */,
-        0 /* de_idle_high */, 0 /* pclk_idle_high */, BOUNCE_BUFFER_SIZE
+        0 /* de_idle_high */, 0 /* pclk_idle_high */
     );
 
     gfx = new Arduino_RGB_Display(SCREEN_WIDTH, SCREEN_HEIGHT, bus, 0, true);
 
-    log_i("Calling gfx->begin()...");
+    Serial.println("Calling gfx->begin()...");
     if (!gfx->begin()) {
-        log_e("FATAL ERROR: gfx->begin failed!");
+        Serial.println("FATAL ERROR: gfx->begin failed!");
         return false;
     }
 
-    log_i("GFX OK. Backlight ON.");
+    Serial.println("GFX OK. Backlight ON.");
 
     // Turn on backlight and quick visual test
     pinMode(TFT_BL, OUTPUT);
@@ -44,13 +46,9 @@ bool DisplayManager::begin() {
     delay(200);
     gfx->fillScreen(BLACK);
 
-    log_i("Initializing LVGL...");
+    Serial.println("Initializing LVGL...");
     lv_init();
     lv_tick_set_cb(get_millis);
-
-#if LV_USE_LOG != 0
-    lv_log_register_print_cb(log_cb);
-#endif
 
     // Memory Management for Buffer (INTERNAL RAM to avoid flickering)
     // 800 * 40 * 2 bytes = 64KB (Fits well in S3's 512KB SRAM)
@@ -86,10 +84,13 @@ bool DisplayManager::begin() {
     lv_indev_set_type(indev, LV_INDEV_TYPE_POINTER);
     lv_indev_set_read_cb(indev, touchpad_read_cb);
 
-    log_i("Initializing UI...");
+    printf("Initializing UI...\n");
     ui_init();
 
-    log_i("System ready");
+    printf("Initializing ESP-NOW Manager...\n");
+    ESPNowManager::getInstance().begin();
+
+    printf("System ready\n");
     return true;
 }
 

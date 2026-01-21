@@ -1,10 +1,4 @@
-/**
- * Sunton ESP32-8048S043 (4.3" 800x480)
- * Project: Senior Refactoring
- * 
- * This sketch acts as the Entry Point.
- * All hardware logic is encapsulated in DisplayManager.
- */
+
 
 #include "src/core/DisplayManager.h"
 #include "src/core/MemoryManager.h"

@@ -17,6 +17,8 @@ Este proyecto proporciona una implementación base para las **pantallas intelige
 - **Estabilización Anti-Flicker**: Estrategia de **"Aislamiento de Bus"** (SRAM + Bounce Buffer) para eliminar parpadeos por concurrencia en PSRAM.
 - **UI Modular**: Interfaz basada en componentes (Pages/Components) con LVGL 9.1.
 - **Configuración Persistente**: Los ajustes (tiempos de bomba) se guardan automáticamente en memoria flash (MemoryManager/NVS).
+- **Comunicación ESP-NOW**: Comunicación inalámbrica directa con la Máquina de Bebidas/Sistema de Riego. Envía selecciones de bebidas por broadcast.
+- **Sincronización Inteligente de Canal**: Escanea automáticamente la red WiFi objetivo para sintonizar su canal de radio con el receptor.
 
 <p align="center">
   <img src="captures/page1-drinks.webp" width="45%" />
@@ -101,6 +103,22 @@ Este proyecto implementa una arquitectura de **Aislamiento de Bus** diseñada es
 - **Golden Timings (8/4/43)**: Sincronismos optimizados para las revisiones de hardware Sunton, garantizando que el panel no pierda el enganche de señal.
 
 
+## 📡 Comunicación Remota (ESP-NOW)
+
+La pantalla se comunica con la **Máquina de Bebidas** (o cualquier receptor ESP-NOW compatible) para enviar comandos de selección.
+
+### 1. 🔑 Configuración
+Como ESP-NOW requiere que ambos dispositivos estén en el mismo canal WiFi, la pantalla busca una red existente para sincronizarse.
+1. Crea un archivo `src/core/secrets.h` (o renombra `secrets_example.h`).
+2. Define el nombre (SSID) de la red a la que está conectado tu receptor:
+   ```cpp
+   #define TARGET_WIFI_SSID "Tu_Red_WiFi"
+   ```
+
+### 2. 📊 Protocolo
+La comunicación utiliza una estructura compartida definida en `src/core/remote_protocol.h`. Si modificas el protocolo, asegúrate de mantener la compatibilidad binaria tanto en el emisor (Pantalla) como en el receptor.
+
+
 ## 🛠️ Scripts y Herramientas
 
 En la carpeta `scripts/` encontrarás herramientas Python para facilitar el desarrollo y la gestión de assets gráficos:
@@ -114,11 +132,6 @@ Actualiza automáticamente todos los assets del proyecto (`src/ui/assets/*.c`) b
 Herramienta de propósito general para convertir *cualquier* imagen PNG a un archivo fuente C compatible con LVGL v9.
 - **Uso**: `python3 scripts/png2lvgl.py <imagen.png> [-o salida.c] [-n nombre_variable]`
 - **Ejemplo**: `python3 scripts/png2lvgl.py logo.png` generará `logo.c` listo para incluir en tu proyecto con la estructura `lv_img_dsc_t`.
-
-## 📄 Licencia
-
-Este proyecto se distribuye bajo la licencia **GNU General Public License v3.0**.
-Consulta el archivo [LICENSE](LICENSE) para más detalles.
 
 ---
 *Este proyecto busca simplificar el uso de estas pantallas Sunton en el entorno Arduino, centralizando la configuración necesaria para el hardware ESP32-S3.*

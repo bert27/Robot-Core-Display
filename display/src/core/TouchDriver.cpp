@@ -1,4 +1,4 @@
-#include "touch.h"
+#include "TouchDriver.h"
 #include <Wire.h>
 
 #if defined(TOUCH_GT911)
@@ -29,7 +29,7 @@ bool touch_touched() {
 #if defined(TOUCH_GT911)
   ts.read();
   if (ts.isTouched) {
-    // Usamos las constantes de Config.h (vía touch.h)
+    // Usamos las constantes de Config.h (vía TouchDriver.h)
     touch_last_x = map(ts.points[0].x, TOUCH_MAP_X1, TOUCH_MAP_X2, 0, SCREEN_WIDTH - 1);
     touch_last_y = map(ts.points[0].y, TOUCH_MAP_Y1, TOUCH_MAP_Y2, 0, SCREEN_HEIGHT - 1);
     return true;

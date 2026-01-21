@@ -50,6 +50,21 @@ lv_obj_t* create_custom_footer(lv_obj_t* parent, const void* icon_src, lv_event_
         lv_obj_add_event_cb(img_btn, event_cb, LV_EVENT_CLICKED, NULL);
     }
     
+    // Status Label (New: Encapsulated here)
+    lv_obj_t * status_label = lv_label_create(footer);
+    lv_label_set_text(status_label, "Listo para servir");
+    lv_obj_set_style_text_color(status_label, lv_color_white(), 0);
+    lv_obj_set_style_text_font(status_label, &lv_font_montserrat_20, 0);
+    lv_obj_align(status_label, LV_ALIGN_LEFT_MID, 20, 0);
 
     return footer;
+}
+
+void footer_set_status_text(lv_obj_t* footer, const char* text) {
+    if (!footer) return;
+    // The label is the second child (index 1) because the image is index 0
+    lv_obj_t * label = lv_obj_get_child(footer, 1);
+    if (label && lv_obj_check_type(label, &lv_label_class)) {
+        lv_label_set_text(label, text);
+    }
 }

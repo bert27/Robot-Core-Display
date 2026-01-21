@@ -17,6 +17,8 @@ The project is optimized to be uploaded from both the Arduino IDE and VS Code wi
 - **Anti-Flicker Stabilization**: **"Bus Isolation"** strategy (SRAM + Bounce Buffer) to eliminate flickering caused by PSRAM concurrency.
 - **Modular UI**: Component-based interface (Pages/Components) using LVGL 9.1.
 - **Persistent Configuration**: Settings (pump times) are automatically saved to flash memory (MemoryManager/NVS).
+- **ESP-NOW Communication**: Direct wireless communication with the Drinks Machine/Irrigation system. Sends drink selections via broadcast.
+- **Smart Channel Sync**: Automatically scans for a target WiFi network to synchronize its radio channel with the receiver.
 
 <p align="center">
   <img src="captures/page1-drinks.webp" width="45%" />
@@ -101,6 +103,22 @@ This project implements a **Bus Isolation** architecture designed specifically f
 - **Golden Timings (8/4/43)**: Optimized timings for Sunton hardware revisions, ensuring the panel does not lose signal lock.
 
 
+## 📡 Remote Communication (ESP-NOW)
+
+The display communicates with the **Drinks Machine** (or any compatible ESP-NOW receiver) to send selection commands.
+
+### 1. 🔑 Configuration
+Since ESP-NOW requires both devices to be on the same WiFi channel, the display scans for an existing network to synchronize itself.
+1. Create a `src/core/secrets.h` file (or rename `secrets_example.h`).
+2. Define the SSID of the network your receiver is connected to:
+   ```cpp
+   #define TARGET_WIFI_SSID "Your_WiFi_Network"
+   ```
+
+### 2. 📊 Protocol
+The communication uses a shared structure defined in `src/core/remote_protocol.h`. If you modify the protocol, ensure it is binary compatible on both the sender (Display) and the receiver.
+
+
 ## 🛠️ Scripts and Tools
 
 In the `scripts/` folder you will find Python tools to facilitate development and graphic asset management:
@@ -114,11 +132,6 @@ Automatically updates all project assets (`src/ui/assets/*.c`) based on the orig
 General-purpose tool to convert *any* PNG image to an LVGL v9 compatible C source file.
 - **Usage**: `python3 scripts/png2lvgl.py <image.png> [-o output.c] [-n variable_name]`
 - **Example**: `python3 scripts/png2lvgl.py logo.png` will generate `logo.c` ready to include in your project with the `lv_img_dsc_t` structure.
-
-## 📄 License
-
-This project is licensed under the **GNU General Public License v3.0**.
-See [LICENSE](LICENSE) for more details.
 
 ---
 *This project aims to simplify the use of these Sunton displays in the Arduino environment, centralizing the necessary configuration for the ESP32-S3 hardware.*

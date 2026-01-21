@@ -4,8 +4,34 @@
 #include "../components/MyButton.h"
 #include "../components/MyTitle.h"
 #include "../assets/icons.h"
+#include "../../core/ESPNowManager.h"
 
 static lv_event_cb_t nav_callback = NULL;
+static lv_obj_t * footer_obj = NULL;
+
+static void drink_event_cb(lv_event_t * e) {
+    lv_obj_t * btn = (lv_obj_t *)lv_event_get_target(e);
+    lv_obj_t * container = lv_obj_get_parent(btn);
+    
+    // In MyCard.cpp: child 0 is btn, child 1 is label
+    lv_obj_t * label = lv_obj_get_child(container, 1); 
+    
+    if (label) {
+        const char * drink = lv_label_get_text(label);
+        printf("[UI] Card clicked: %s\n", drink);
+        
+        // Update UI footer using the component's function
+        if (footer_obj) {
+            char buf[64];
+            snprintf(buf, sizeof(buf), "Sirviendo: %s", drink);
+            footer_set_status_text(footer_obj, buf);
+        }
+        
+        ESPNowManager::getInstance().sendDrinkSelection(drink);
+    } else {
+        printf("[UI] Error: Label not found in card container\n");
+    }
+}
 
 lv_obj_t* page_cocktails_create(lv_event_cb_t on_nav_click) {
     nav_callback = on_nav_click;
@@ -38,21 +64,21 @@ lv_obj_t* page_cocktails_create(lv_event_cb_t on_nav_click) {
     lv_obj_set_style_pad_row(grid_cont, 20, 0); 
 
     // Buttons (Row 1) - Now MyCard
-    create_custom_card(grid_cont, ICON_COCKTAIL_SEX_ON_BEACH, "Sex on the Beach", 220, 135, lv_color_hex(0x800080), NULL, &lv_font_montserrat_20);
-    create_custom_card(grid_cont, ICON_COCKTAIL_PORN_STAR, "Porn Star Martini", 220, 135, lv_color_hex(0x006400), NULL, &lv_font_montserrat_20);
-    create_custom_card(grid_cont, ICON_COCKTAIL_COCA_COLA, "CocaCola", 220, 135, lv_color_hex(0x800000), NULL, &lv_font_montserrat_20);
+    create_custom_card(grid_cont, ICON_COCKTAIL_SEX_ON_BEACH, "Sex on the Beach", 220, 135, lv_color_hex(0x800080), drink_event_cb, &lv_font_montserrat_20);
+    create_custom_card(grid_cont, ICON_COCKTAIL_PORN_STAR, "Porn Star Martini", 220, 135, lv_color_hex(0x006400), drink_event_cb, &lv_font_montserrat_20);
+    create_custom_card(grid_cont, ICON_COCKTAIL_COCA_COLA, "CocaCola", 220, 135, lv_color_hex(0x800000), drink_event_cb, &lv_font_montserrat_20);
 
     // Buttons (Row 2) - Now MyCard
-    create_custom_card(grid_cont, ICON_COCKTAIL_VODKA, "Vodka", 220, 135, lv_color_hex(0xFF8C00), NULL, &lv_font_montserrat_20);
-    create_custom_card(grid_cont, ICON_COCKTAIL_RON, "Ron", 220, 135, lv_color_hex(0x8B4513), NULL, &lv_font_montserrat_20);
-    create_custom_card(grid_cont, ICON_COCKTAIL_GIN_TONIC, "Gin Tonic", 220, 135, lv_color_hex(0xFF69B4), NULL, &lv_font_montserrat_20);
+    create_custom_card(grid_cont, ICON_COCKTAIL_VODKA, "Vodka", 220, 135, lv_color_hex(0xFF8C00), drink_event_cb, &lv_font_montserrat_20);
+    create_custom_card(grid_cont, ICON_COCKTAIL_RON, "Ron", 220, 135, lv_color_hex(0x8B4513), drink_event_cb, &lv_font_montserrat_20);
+    create_custom_card(grid_cont, ICON_COCKTAIL_GIN_TONIC, "Gin Tonic", 220, 135, lv_color_hex(0xFF69B4), drink_event_cb, &lv_font_montserrat_20);
 
     for(int i=0; i<6; i++) {
          lv_obj_set_grid_cell(lv_obj_get_child(grid_cont, i), LV_GRID_ALIGN_STRETCH, i%3, 1, LV_GRID_ALIGN_STRETCH, i/3, 1);
     }
 
     // Footer Container using MyFooter component
-    create_custom_footer(screen, ICON_NAV_SETTINGS, on_nav_click);
+    footer_obj = create_custom_footer(screen, ICON_NAV_SETTINGS, on_nav_click);
 
     return screen;
 }
