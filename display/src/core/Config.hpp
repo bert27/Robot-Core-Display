@@ -38,10 +38,10 @@
 // --- Timing Configuration (Optimized 60FPS Attempt) ---
 #define H_FRONT_PORCH 8
 #define H_PULSE_WIDTH 4
-#define H_BACK_PORCH  43  // Restore Golden Timing per README
+#define H_BACK_PORCH  20  
 #define V_FRONT_PORCH 8
 #define V_PULSE_WIDTH 4
-#define V_BACK_PORCH  12  // Restore standard V-Porch
+#define V_BACK_PORCH  8   
 #define PCLK_SPEED    16000000L // 16MHz: Smoothness attempt
 #define PCLK_INV      1         
 #define BOUNCE_BUFFER_SIZE (SCREEN_WIDTH * 20) // Keep buffer size conservative
@@ -49,7 +49,7 @@
 // --- LVGL Configuration ---
 #define SCREEN_WIDTH  800
 #define SCREEN_HEIGHT 480
-#define LVGL_DRAW_LINES 40 // Use 40 lines to fit in internal RAM
+#define LVGL_DRAW_LINES 100 // Reduced to 20 to free SRAM and avoid bus contention
 #define DOUBLE_BUFFER_ENABLED 1
 // Disabled to avoid reboot loop
 

@@ -142,6 +142,7 @@ static void create_pump_card(lv_obj_t * parent, const char * name, int* pwm_ptr,
     pwm_data->is_time = false;
 
     lv_obj_t * pwm_slider = create_custom_slider(card, 0, 255, LV_PCT(100), NULL);
+    lv_obj_set_style_bg_color(pwm_slider, lv_palette_main(LV_PALETTE_ORANGE), LV_PART_INDICATOR); // Orange for PWM
     lv_slider_set_value(pwm_slider, *pwm_ptr, LV_ANIM_OFF);
     lv_obj_add_event_cb(pwm_slider, pump_slider_event_cb, LV_EVENT_VALUE_CHANGED, pwm_data);
     lv_obj_add_event_cb(pwm_slider, pump_slider_event_cb, LV_EVENT_RELEASED, pwm_data);
@@ -175,6 +176,7 @@ static void create_pump_card(lv_obj_t * parent, const char * name, int* pwm_ptr,
     time_data->is_time = true;
 
     lv_obj_t * time_slider = create_custom_slider(card, 500, 10000, LV_PCT(100), NULL);
+    lv_obj_set_style_bg_color(time_slider, lv_palette_main(LV_PALETTE_BLUE), LV_PART_INDICATOR); // Blue for Time
     lv_slider_set_value(time_slider, *time_ptr, LV_ANIM_OFF);
     lv_obj_add_event_cb(time_slider, pump_slider_event_cb, LV_EVENT_VALUE_CHANGED, time_data);
     lv_obj_add_event_cb(time_slider, pump_slider_event_cb, LV_EVENT_RELEASED, time_data);
