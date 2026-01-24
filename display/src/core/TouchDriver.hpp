@@ -42,6 +42,10 @@ inline bool touch_touched() {
     touch_last_x = map(raw_x, TOUCH_MAP_X1, TOUCH_MAP_X2, 0, SCREEN_WIDTH - 1);
     touch_last_y = map(raw_y, TOUCH_MAP_Y1, TOUCH_MAP_Y2, 0, SCREEN_HEIGHT - 1);
     
+    // Clamp values to valid screen range to prevent LVGL warnings (e.g., X > 800)
+    touch_last_x = constrain(touch_last_x, 0, SCREEN_WIDTH - 1);
+    touch_last_y = constrain(touch_last_y, 0, SCREEN_HEIGHT - 1);
+    
     printf("[Touch] Raw: (%d, %d) -> Mapped: (%d, %d)\n", raw_x, raw_y, touch_last_x, touch_last_y);
     return true;
   }

@@ -93,12 +93,12 @@
 #define TOUCH_MAP_Y2 0
 
 // --- Custom Calibration (Uncomment if your specific screen has a compressed range) ---
-// #define USE_CUSTOM_CALIBRATION
-// #ifdef USE_CUSTOM_CALIBRATION
-//   #undef TOUCH_MAP_X2
-//   #undef TOUCH_MAP_Y2
-//   #define TOUCH_MAP_X2 320 // Fix for compressed X axis
-//   #define TOUCH_MAP_Y2 220 // Fix for compressed Y axis
-// #endif
+#define USE_CUSTOM_CALIBRATION
+#ifdef USE_CUSTOM_CALIBRATION
+  #undef TOUCH_MAP_X2
+  #undef TOUCH_MAP_Y2
+  #define TOUCH_MAP_X2 330 // Adjusted margin (Raw ~338 -> 800)
+  #define TOUCH_MAP_Y2 220 // Adjusted margin (Raw ~224 -> 480)
+#endif
 
 #endif // CONFIG_HPP
