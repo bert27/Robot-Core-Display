@@ -32,7 +32,7 @@ jobs:
         run: pip install --upgrade platformio
 
       - name: Create Dummy secrets.h
-        run: cp display/src/core/secrets_example.h display/src/core/secrets.h
+        run: cp display/secrets_example.h display/secrets.h
 
       - name: Run PlatformIO Build
         run: pio run

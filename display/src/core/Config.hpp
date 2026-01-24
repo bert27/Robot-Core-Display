@@ -1,5 +1,5 @@
-#ifndef CONFIG_H
-#define CONFIG_H
+#ifndef CONFIG_HPP
+#define CONFIG_HPP
 
 #include <Arduino.h>
 
@@ -38,13 +38,11 @@
 // --- Timing Configuration (Optimized 60FPS Attempt) ---
 #define H_FRONT_PORCH 8
 #define H_PULSE_WIDTH 4
-#define H_BACK_PORCH  20  // Reduced from 43 to 20 to gain active time
-
+#define H_BACK_PORCH  43  // Restore Golden Timing per README
 #define V_FRONT_PORCH 8
 #define V_PULSE_WIDTH 4
-#define V_BACK_PORCH  8   // Reduced from 12 to 8
-
-#define PCLK_SPEED    16000000L // 16MHz: Smoothness attempt (was 14MHz)
+#define V_BACK_PORCH  12  // Restore standard V-Porch
+#define PCLK_SPEED    16000000L // 16MHz: Smoothness attempt
 #define PCLK_INV      1         
 #define BOUNCE_BUFFER_SIZE (SCREEN_WIDTH * 20) // Keep buffer size conservative
 
@@ -88,9 +86,19 @@
 #define TOUCH_GT911_INT 18
 #define TOUCH_GT911_RST 38
 #define TOUCH_GT911_ROTATION ROTATION_NORMAL
+// --- Touch Mapping Standard (Factory 800x480) ---
 #define TOUCH_MAP_X1 800
 #define TOUCH_MAP_X2 0
 #define TOUCH_MAP_Y1 480
 #define TOUCH_MAP_Y2 0
 
-#endif // CONFIG_H
+// --- Custom Calibration (Uncomment if your specific screen has a compressed range) ---
+// #define USE_CUSTOM_CALIBRATION
+// #ifdef USE_CUSTOM_CALIBRATION
+//   #undef TOUCH_MAP_X2
+//   #undef TOUCH_MAP_Y2
+//   #define TOUCH_MAP_X2 320 // Fix for compressed X axis
+//   #define TOUCH_MAP_Y2 220 // Fix for compressed Y axis
+// #endif
+
+#endif // CONFIG_HPP

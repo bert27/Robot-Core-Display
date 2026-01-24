@@ -2,25 +2,30 @@
 #include "../components/MyButton.h"
 #include "../components/slider/MySlider.h"
 #include "../components/MyTitle.h"
+#include "../components/footer/MyFooter.h"
 #include "../assets/icons.h"
-#include "../../core/MemoryManager.h"
+#include "../../core/MemoryManager.hpp"
 #include <stdio.h>
 
 // Time configuration variables (ms)
-static int time_sob = 1000;
-static int time_psm = 1000;
-static int time_coka = 1000;
-static int time_vodka = 1000;
-static int time_ron = 1000;
-static int time_gin = 1000;
+static int time_coke = 1000;
+static int time_orange = 1000;
+static int time_v_shot = 500;
+static int time_v_coke = 1500;
+static int time_screw = 1500;
+static int time_sob = 2000;
+static int time_tequila = 2000;
+static int time_shirley = 1500;
 
 // NVS Keys
-static const char* KEY_SOB = "sob";
-static const char* KEY_PSM = "psm";
-static const char* KEY_COKA = "coka";
-static const char* KEY_VODKA = "vodka";
-static const char* KEY_RON = "ron";
-static const char* KEY_GIN = "gin";
+static const char* KEY_COKE = "coke";
+static const char* KEY_ORANGE = "orange";
+static const char* KEY_V_SHOT = "v_shot";
+static const char* KEY_V_COKE = "v_coke";
+static const char* KEY_SCREW = "screw";
+static const char* KEY_SOB = "sob_ms";
+static const char* KEY_TEQUILA = "tequila";
+static const char* KEY_SHIRLEY = "shirley";
 
 struct ConfigData {
     lv_obj_t* label_val; // We only need to update the value
@@ -30,12 +35,14 @@ struct ConfigData {
 
 // Load values from NVS
 static void load_settings() {
-    time_sob = MemoryManager::getInt(KEY_SOB, 1000);
-    time_psm = MemoryManager::getInt(KEY_PSM, 1000);
-    time_coka = MemoryManager::getInt(KEY_COKA, 1000);
-    time_vodka = MemoryManager::getInt(KEY_VODKA, 1000);
-    time_ron = MemoryManager::getInt(KEY_RON, 1000);
-    time_gin = MemoryManager::getInt(KEY_GIN, 1000);
+    time_coke = MemoryManager::getInt(KEY_COKE, 1000);
+    time_orange = MemoryManager::getInt(KEY_ORANGE, 1000);
+    time_v_shot = MemoryManager::getInt(KEY_V_SHOT, 500);
+    time_v_coke = MemoryManager::getInt(KEY_V_COKE, 1500);
+    time_screw = MemoryManager::getInt(KEY_SCREW, 1500);
+    time_sob = MemoryManager::getInt(KEY_SOB, 2000);
+    time_tequila = MemoryManager::getInt(KEY_TEQUILA, 2000);
+    time_shirley = MemoryManager::getInt(KEY_SHIRLEY, 1500);
 }
 
 // Callback to update label and save to NVS
@@ -95,10 +102,7 @@ static void create_config_slider(lv_obj_t * parent, const char * name, int* val_
     lv_obj_set_flex_align(header_cont, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_END); // Align bottom to match bases
 
     // Name Label
-    lv_obj_t * lbl_name = lv_label_create(header_cont);
-    lv_label_set_text(lbl_name, name);
-    lv_obj_set_style_text_color(lbl_name, lv_color_white(), 0);
-    lv_obj_set_style_text_font(lbl_name, &lv_font_montserrat_20, 0);
+    create_custom_title(header_cont, name, &lv_font_montserrat_20, LV_ALIGN_BOTTOM_LEFT, 0, 0);
 
     // Value Label
     lv_obj_t * lbl_val = lv_label_create(header_cont);
@@ -123,7 +127,7 @@ static void create_config_slider(lv_obj_t * parent, const char * name, int* val_
     lv_obj_add_event_cb(slider, slider_cleanup_cb, LV_EVENT_DELETE, data);
 }
 
-lv_obj_t* page_config_create(lv_event_cb_t on_nav_back) {
+lv_obj_t* page_config_create(lv_event_cb_t on_nav_back, lv_event_cb_t on_nav_next) {
     load_settings(); // Load saved values
 
     lv_obj_t* screen = lv_obj_create(NULL);
@@ -131,7 +135,7 @@ lv_obj_t* page_config_create(lv_event_cb_t on_nav_back) {
     lv_obj_set_style_bg_opa(screen, LV_OPA_COVER, LV_PART_MAIN);
 
     // Title
-    create_custom_title(screen, "CONFIGURATION");
+    create_custom_title(screen, "CONFIG COCKTAILS");
 
     // Scroll Container
     lv_obj_t * list_cont = lv_obj_create(screen);
@@ -145,16 +149,17 @@ lv_obj_t* page_config_create(lv_event_cb_t on_nav_back) {
     lv_obj_set_style_pad_column(list_cont, 10, 0); 
 
     // Sliders
-    create_config_slider(list_cont, "Sex on Beach", &time_sob, KEY_SOB);
-    create_config_slider(list_cont, "Porn Star", &time_psm, KEY_PSM);
-    create_config_slider(list_cont, "CocaCola", &time_coka, KEY_COKA);
-    create_config_slider(list_cont, "Vodka", &time_vodka, KEY_VODKA);
-    create_config_slider(list_cont, "Ron", &time_ron, KEY_RON);
-    create_config_slider(list_cont, "Gin Tonic", &time_gin, KEY_GIN);
+    create_config_slider(list_cont, "Cocacola", &time_coke, KEY_COKE);
+    create_config_slider(list_cont, "Orange Juice", &time_orange, KEY_ORANGE);
+    create_config_slider(list_cont, "Vodka shot", &time_v_shot, KEY_V_SHOT);
+    create_config_slider(list_cont, "Vodka with Cocacola", &time_v_coke, KEY_V_COKE);
+    create_config_slider(list_cont, "Screwdriver", &time_screw, KEY_SCREW);
+    create_config_slider(list_cont, "Sex on the beach", &time_sob, KEY_SOB);
+    create_config_slider(list_cont, "Tequila sunrise", &time_tequila, KEY_TEQUILA);
+    create_config_slider(list_cont, "Shirley Temple", &time_shirley, KEY_SHIRLEY);
 
-    // Back Button
-    lv_obj_t * btn = create_custom_button(screen, ICON_NAV_PREV, "Back", 180, 50, lv_color_hex(0x008000), on_nav_back, NULL);
-    lv_obj_align(btn, LV_ALIGN_BOTTOM_MID, 0, -20);
+    // Footer container using centralized component
+    create_nav_footer(screen, on_nav_back, on_nav_next);
 
     return screen;
 }

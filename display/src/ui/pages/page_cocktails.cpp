@@ -4,7 +4,7 @@
 #include "../components/MyButton.h"
 #include "../components/MyTitle.h"
 #include "../assets/icons.h"
-#include "../../core/ESPNowManager.h"
+#include "../../core/ESPNowManager.hpp"
 
 static lv_event_cb_t nav_callback = NULL;
 static lv_obj_t * footer_obj = NULL;
@@ -57,23 +57,23 @@ lv_obj_t* page_cocktails_create(lv_event_cb_t on_nav_click) {
     lv_obj_set_scrollbar_mode(grid_cont, LV_SCROLLBAR_MODE_OFF); 
     
     static int32_t col_dsc[] = {220, 220, 220, LV_GRID_TEMPLATE_LAST};
-    static int32_t row_dsc[] = {135, 135, LV_GRID_TEMPLATE_LAST}; 
+    static int32_t row_dsc[] = {135, 135, 135, LV_GRID_TEMPLATE_LAST}; 
     lv_obj_set_grid_dsc_array(grid_cont, col_dsc, row_dsc);
     lv_obj_set_grid_align(grid_cont, LV_GRID_ALIGN_CENTER, LV_GRID_ALIGN_START); 
     lv_obj_set_style_pad_column(grid_cont, 20, 0); 
     lv_obj_set_style_pad_row(grid_cont, 20, 0); 
 
-    // Buttons (Row 1) - Now MyCard
-    create_custom_card(grid_cont, ICON_COCKTAIL_SEX_ON_BEACH, "Sex on the Beach", 220, 135, lv_color_hex(0x800080), drink_event_cb, &lv_font_montserrat_20);
-    create_custom_card(grid_cont, ICON_COCKTAIL_PORN_STAR, "Porn Star Martini", 220, 135, lv_color_hex(0x006400), drink_event_cb, &lv_font_montserrat_20);
-    create_custom_card(grid_cont, ICON_COCKTAIL_COCA_COLA, "CocaCola", 220, 135, lv_color_hex(0x800000), drink_event_cb, &lv_font_montserrat_20);
+    // Cocktail List (Synchronized with serverEspReact)
+    create_custom_card(grid_cont, ICON_COCKTAIL_COCA_COLA, "Cocacola", 220, 135, lv_color_hex(0xFF0000), drink_event_cb, &lv_font_montserrat_20);
+    create_custom_card(grid_cont, ICON_COCKTAIL_GIN_TONIC, "Orange Juice", 220, 135, lv_color_hex(0xFFA500), drink_event_cb, &lv_font_montserrat_20);
+    create_custom_card(grid_cont, ICON_COCKTAIL_VODKA, "Vodka shot", 220, 135, lv_color_hex(0x00FFFF), drink_event_cb, &lv_font_montserrat_20);
+    create_custom_card(grid_cont, ICON_COCKTAIL_VODKA, "Vodka with Cocacola", 220, 135, lv_color_hex(0x8B0000), drink_event_cb, &lv_font_montserrat_20);
+    create_custom_card(grid_cont, ICON_COCKTAIL_VODKA, "Screwdriver", 220, 135, lv_color_hex(0xFFD700), drink_event_cb, &lv_font_montserrat_20);
+    create_custom_card(grid_cont, ICON_COCKTAIL_SEX_ON_BEACH, "Sex on the beach", 220, 135, lv_color_hex(0xFF1493), drink_event_cb, &lv_font_montserrat_20);
+    create_custom_card(grid_cont, ICON_COCKTAIL_PORN_STAR, "Tequila sunrise", 220, 135, lv_color_hex(0xFF4500), drink_event_cb, &lv_font_montserrat_20);
+    create_custom_card(grid_cont, ICON_COCKTAIL_COCA_COLA, "Shirley Temple", 220, 135, lv_color_hex(0xFF69B4), drink_event_cb, &lv_font_montserrat_20);
 
-    // Buttons (Row 2) - Now MyCard
-    create_custom_card(grid_cont, ICON_COCKTAIL_VODKA, "Vodka", 220, 135, lv_color_hex(0xFF8C00), drink_event_cb, &lv_font_montserrat_20);
-    create_custom_card(grid_cont, ICON_COCKTAIL_RON, "Ron", 220, 135, lv_color_hex(0x8B4513), drink_event_cb, &lv_font_montserrat_20);
-    create_custom_card(grid_cont, ICON_COCKTAIL_GIN_TONIC, "Gin Tonic", 220, 135, lv_color_hex(0xFF69B4), drink_event_cb, &lv_font_montserrat_20);
-
-    for(int i=0; i<6; i++) {
+    for(int i=0; i<8; i++) {
          lv_obj_set_grid_cell(lv_obj_get_child(grid_cont, i), LV_GRID_ALIGN_STRETCH, i%3, 1, LV_GRID_ALIGN_STRETCH, i/3, 1);
     }
 

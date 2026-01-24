@@ -1,6 +1,7 @@
 # macOS metadata files
 ._*
 .DS_Store
+.!*
 
 # PlatformIO
 .pio

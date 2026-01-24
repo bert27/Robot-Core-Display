@@ -1,4 +1,6 @@
 #include "MyFooter.h"
+#include "../MyButton.h"
+#include "../../assets/icons.h"
 
 lv_obj_t* create_custom_footer(lv_obj_t* parent, const void* icon_src, lv_event_cb_t event_cb) {
     // Footer Container
@@ -67,4 +69,30 @@ void footer_set_status_text(lv_obj_t* footer, const char* text) {
     if (label && lv_obj_check_type(label, &lv_label_class)) {
         lv_label_set_text(label, text);
     }
+}
+
+lv_obj_t* create_nav_footer(lv_obj_t* parent, lv_event_cb_t on_back, lv_event_cb_t on_next) {
+    lv_obj_t * footer = lv_obj_create(parent);
+    lv_obj_remove_style_all(footer);
+    lv_obj_set_size(footer, 800, 70);
+    lv_obj_align(footer, LV_ALIGN_BOTTOM_MID, 0, 0);
+    lv_obj_set_style_bg_opa(footer, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(footer, 0, 0);
+    lv_obj_set_flex_flow(footer, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(footer, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_column(footer, 40, 0);
+
+    if (on_back) {
+        create_custom_button(footer, ICON_NAV_PREV, "Back", 180, 50, lv_color_hex(0x800000), on_back, NULL);
+    }
+    
+    if (on_next) {
+        create_custom_button(footer, ICON_NAV_NEXT, "Next", 180, 50, lv_color_hex(0x008000), on_next, NULL);
+    }
+
+    return footer;
+}
+
+lv_obj_t* create_simple_nav_footer(lv_obj_t* parent, lv_event_cb_t on_back) {
+    return create_nav_footer(parent, on_back, NULL);
 }

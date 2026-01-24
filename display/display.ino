@@ -1,7 +1,7 @@
 
 
-#include "src/core/DisplayManager.h"
-#include "src/core/MemoryManager.h"
+#include "src/core/DisplayManager.hpp"
+#include "src/core/MemoryManager.hpp"
 
 void setup() {
     // Initialize serial port
