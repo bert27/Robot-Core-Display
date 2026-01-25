@@ -21,17 +21,25 @@ inline void onDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
 inline struct_message last_sync_data;
 inline unsigned long last_sync_time = 0;
 inline bool is_server_connected = false;
+inline std::function<void(const RecipeSyncData&)> on_recipe_recv_cb = nullptr;
 
 inline void onDataRecv(const esp_now_recv_info_t *recv_info, const uint8_t *data, int len) {
     if (len == sizeof(struct_message)) {
         struct_message msg;
         memcpy(&msg, data, sizeof(msg));
         
-        if (msg.id == 101) { // Sync Response
+        if (msg.id == REMOTE_CMD_SYNC_RESPONSE) { // Sync Response
             last_sync_data = msg;
             last_sync_time = millis();
             is_server_connected = true;
             printf("[ESP-NOW] Pump data received from server!\n");
+        }
+        else if (msg.id == REMOTE_CMD_RECIPE_DATA) { // Recipe Part Received
+            is_server_connected = true;
+            last_sync_time = millis(); // Alive
+            if (on_recipe_recv_cb) {
+                on_recipe_recv_cb(msg.recipeData);
+            }
         }
     }
 }
@@ -97,8 +105,20 @@ public:
     void requestPumpSync() {
         struct_message msg;
         memset(&msg, 0, sizeof(msg));
-        msg.id = 100; // Request Sync
+        msg.id = REMOTE_CMD_SYNC_REQUEST; // Request Sync
         esp_now_send(broadcastAddress, (uint8_t *) &msg, sizeof(msg));
+    }
+
+    void requestRecipeSync() {
+        struct_message msg;
+        memset(&msg, 0, sizeof(msg));
+        msg.id = REMOTE_CMD_RECIPE_SYNC_REQUEST;
+        esp_now_send(broadcastAddress, (uint8_t *) &msg, sizeof(msg));
+        printf("[ESP-NOW] Requested Recipe Sync...\n");
+    }
+
+    void setRecipeCallback(std::function<void(const RecipeSyncData&)> cb) {
+        on_recipe_recv_cb = cb;
     }
 
     bool isConnected() {
@@ -112,7 +132,7 @@ public:
         struct_message msg;
         memset(&msg, 0, sizeof(msg));
         
-        msg.id = 99; 
+        msg.id = REMOTE_CMD_DRINK_ORDER; 
         strncpy(msg.choose, drinkName.c_str(), sizeof(msg.choose) - 1);
         
         esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &msg, sizeof(msg));

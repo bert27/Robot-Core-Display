@@ -9,6 +9,21 @@
 static lv_event_cb_t nav_callback = NULL;
 static lv_obj_t * footer_obj = NULL;
 
+#include "../components/modal/MyModal.hpp"
+
+// Static buffer to hold the selected drink name between callbacks
+static char selected_drink[64];
+
+static void confirm_drink_cb(lv_event_t * e) {
+    const char * drink = (const char *)lv_event_get_user_data(e);
+    if (drink) {
+        printf("[UI] Confirmed drink: %s\n", drink);
+        
+        // Send Command
+        ESPNowManager::getInstance().sendDrinkSelection(drink);
+    }
+}
+
 static void drink_event_cb(lv_event_t * e) {
     lv_obj_t * btn = (lv_obj_t *)lv_event_get_target(e);
     lv_obj_t * container = lv_obj_get_parent(btn);
@@ -17,17 +32,18 @@ static void drink_event_cb(lv_event_t * e) {
     lv_obj_t * label = lv_obj_get_child(container, 1); 
     
     if (label) {
-        const char * drink = lv_label_get_text(label);
-        printf("[UI] Card clicked: %s\n", drink);
+        const char * drink_name = lv_label_get_text(label);
         
-        // Update UI footer using the component's function
-        if (footer_obj) {
-            char buf[64];
-            snprintf(buf, sizeof(buf), "Sirviendo: %s", drink);
-            footer_set_status_text(footer_obj, buf);
-        }
+        // Copy to static buffer to ensure it persists comfortably
+        strncpy(selected_drink, drink_name, sizeof(selected_drink) - 1);
         
-        ESPNowManager::getInstance().sendDrinkSelection(drink);
+        printf("[UI] Requesting drink: %s. Opening Modal.\n", selected_drink);
+        
+        char msg[128];
+        snprintf(msg, sizeof(msg), "¿Seguro que quieres pedir un %s?", selected_drink);
+        
+        create_custom_modal(lv_scr_act(), "CONFIRMAR", msg, confirm_drink_cb, NULL, selected_drink);
+        
     } else {
         printf("[UI] Error: Label not found in card container\n");
     }

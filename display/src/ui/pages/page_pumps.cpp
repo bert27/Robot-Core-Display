@@ -75,7 +75,7 @@ static void pump_slider_event_cb(lv_event_t * e) {
     // 1. Update Value Label
     if (data->label_val) {
         if (data->is_time) {
-            lv_label_set_text_fmt(data->label_val, "%.1fs", (float)val / 1000.0f);
+            lv_label_set_text_fmt(data->label_val, "%d.%ds", val / 1000, (val % 1000) / 100);
         } else {
             lv_label_set_text_fmt(data->label_val, "%d", val);
         }
@@ -164,7 +164,7 @@ static void create_pump_card(lv_obj_t * parent, const char * name, int* pwm_ptr,
     lv_obj_align(lbl_time_title, LV_ALIGN_TOP_LEFT, 0, 0);
 
     lv_obj_t * lbl_time_val = lv_label_create(time_cont);
-    lv_label_set_text_fmt(lbl_time_val, "%.1fs", (float)*time_ptr / 1000.0f);
+    lv_label_set_text_fmt(lbl_time_val, "%d.%ds", *time_ptr / 1000, (*time_ptr % 1000) / 100);
     lv_obj_set_style_text_color(lbl_time_val, lv_color_white(), 0);
     lv_obj_set_style_text_font(lbl_time_val, &lv_font_montserrat_14, 0);
     lv_obj_align(lbl_time_val, LV_ALIGN_TOP_RIGHT, 0, 0);
@@ -175,7 +175,7 @@ static void create_pump_card(lv_obj_t * parent, const char * name, int* pwm_ptr,
     time_data->val_ptr = time_ptr;
     time_data->is_time = true;
 
-    lv_obj_t * time_slider = create_custom_slider(card, 500, 10000, LV_PCT(100), NULL);
+    lv_obj_t * time_slider = create_custom_slider(card, 500, 60000, LV_PCT(100), NULL);
     lv_obj_set_style_bg_color(time_slider, lv_palette_main(LV_PALETTE_BLUE), LV_PART_INDICATOR); // Blue for Time
     lv_slider_set_value(time_slider, *time_ptr, LV_ANIM_OFF);
     lv_obj_add_event_cb(time_slider, pump_slider_event_cb, LV_EVENT_VALUE_CHANGED, time_data);

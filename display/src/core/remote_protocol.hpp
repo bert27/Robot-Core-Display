@@ -21,6 +21,24 @@ struct PumpSyncData {
     float calibration[4];
 };
 
+struct RecipeSyncData {
+    uint8_t index;
+    uint8_t total;
+    char name[32];
+    uint16_t ingredientsMl[4]; // [0]=Pump1, [1]=Pump2...
+};
+
+enum ActionType {
+    REMOTE_CMD_DRINK_ORDER = 99,
+    REMOTE_CMD_SYNC_REQUEST = 100,
+    REMOTE_CMD_SYNC_RESPONSE = 101,
+    REMOTE_CMD_RECIPE_SYNC_REQUEST = 102,
+    REMOTE_CMD_RECIPE_DATA = 103,
+     // Legacy/Other inputs
+    REMOTE_CMD_JOYSTICK = 1,
+    REMOTE_CMD_GYRO = 2
+};
+
 typedef struct __attribute__((packed)) struct_message {
     int id;
     float temp;
@@ -31,6 +49,7 @@ typedef struct __attribute__((packed)) struct_message {
             char giroscope[96];    // Command from gyro (aligned)
         };
         PumpSyncData pumpValues;   // Used for ID 101 (Sync Response)
+        RecipeSyncData recipeData; // Used for ID 103 (Recipe Data)
     };
     ValuesGiroscope giroscopeValues;
     JoystickData joystickValues;
