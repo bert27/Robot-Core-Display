@@ -5,6 +5,7 @@
 
 🇺🇸 **[Read in English](README.md)** | 🇪🇸 **[Leer en Español](README_ES.md)**
 
+
 This project provides a base implementation for **generic 4.3-inch smart displays** (ESP32-S3 IPS 800x480) commonly found on **AliExpress** (Sunton 8048S043 models or clones).
 The project is optimized to be uploaded from both the Arduino IDE and VS Code with PlatformIO.
 
@@ -15,9 +16,14 @@ The project is optimized to be uploaded from both the Arduino IDE and VS Code wi
 - **Graphic Interface**: [LVGL v9.1.0](https://lvgl.io/).
 - **Graphics Library**: [Arduino_GFX](https://github.com/moononournation/Arduino_GFX).
 - **Anti-Flicker Stabilization**: **"Bus Isolation"** strategy (SRAM + Bounce Buffer) to eliminate flickering caused by PSRAM concurrency.
-- **Modular UI**: Component-based interface (Pages/Components) using LVGL 9.1.
-- **Persistent Configuration**: Settings (pump times) are automatically saved to flash memory (MemoryManager/NVS).
-- **ESP-NOW Communication**: Direct wireless communication with the Drinks Machine/Irrigation system. Sends drink selections via broadcast.
+- **Modular UI**: Component-based interface (Pages/Components) using LVGL 9.1 featuring **3 Main Screens**:
+    1.  **Drink Selection**: Visual gallery to browse and choose cocktails.
+    2.  **Recipe Config**: Interactive modal to adjust ingredients and quantities for each cocktail.
+    3.  **Pump Config**: Calibration and timing adjustments for the 4 peristaltic pumps.
+
+[![Main Firmware](https://img.shields.io/badge/Get_Main_Firmware-Robot_Core-blueviolet?style=flat&logo=arduino)](https://github.com/Albert-Benavent-Cabrera/Robot-Core)
+- **Remote Configuration**: Cocktails and ingredients are received via ESP-NOW from the Drinks App (Robot Core). Adjusting slider values saves the configuration on the server remotely, not locally. Displays "Mock" data if offline.
+- **ESP-NOW Communication**: Direct wireless communication with the Drinks Machine. Sends drink selections via broadcast.
 - **Smart Channel Sync**: Automatically scans for a target WiFi network to synchronize its radio channel with the receiver.
 
 <p align="center">
@@ -30,11 +36,15 @@ The project is optimized to be uploaded from both the Arduino IDE and VS Code wi
 This project is fully compatible with the Arduino IDE. Follow these steps to set it up:
 
 ### 1. 📚 Library Preparation
-Install the following **3 libraries** from the Arduino **Library Manager** (**Tools > Manage Libraries**):
+
+Install these **2 libraries** from the Arduino **Library Manager** (**Tools > Manage Libraries**):
 
 1. **lvgl** (v9.1.0) - Graphics engine.
-2. **Arduino_GFX_Library** - Display driver.
-3. **GT911** - Touch panel driver.
+2. **GT911** - Touch panel driver.
+
+For **Arduino_GFX**, you have two options:
+*   **Copy it**: Copy the `lib/GFX_Library_for_Arduino` folder from this project to your Arduino libraries folder.
+*   **Download it**: Install **"GFX Library for Arduino"** selecting version **1.6.4** from the Manager.
 
 > [!IMPORTANT]
 > If you receive `No such file or directory` errors with any of these names, it is because the corresponding library is missing from the Arduino manager.

@@ -5,6 +5,7 @@
 
 🇺🇸 **[Read in English](README.md)** | 🇪🇸 **[Leer en Español](README_ES.md)**
 
+
 Este proyecto proporciona una implementación base para las **pantallas inteligentes genéricas de 4.3 pulgadas** (ESP32-S3 IPS 800x480) que se encuentran fácilmente en **AliExpress** (modelos tipo Sunton 8048S043 o clones).
  El proyecto está optimizado para ser cargado tanto desde el IDE de Arduino como desde VS Code con PlatformIO.
 
@@ -15,9 +16,14 @@ Este proyecto proporciona una implementación base para las **pantallas intelige
 - **Interfaz Gráfica**: [LVGL v9.1.0](https://lvgl.io/).
 - **Librería de Gráficos**: [Arduino_GFX](https://github.com/moononournation/Arduino_GFX).
 - **Estabilización Anti-Flicker**: Estrategia de **"Aislamiento de Bus"** (SRAM + Bounce Buffer) para eliminar parpadeos por concurrencia en PSRAM.
-- **UI Modular**: Interfaz basada en componentes (Pages/Components) con LVGL 9.1.
-- **Configuración Persistente**: Los ajustes (tiempos de bomba) se guardan automáticamente en memoria flash (MemoryManager/NVS).
-- **Comunicación ESP-NOW**: Comunicación inalámbrica directa con la Máquina de Bebidas/Sistema de Riego. Envía selecciones de bebidas por broadcast.
+- **UI Modular**: Interfaz basada en componentes (Pages/Components) con LVGL 9.1 que consta de **3 Pantallas Principales**:
+    1.  **Selección de Bebidas**: Galería visual para ver y elegir cócteles.
+    2.  **Configuración de Recetas**: Modal interactivo para ajustar ingredientes y cantidades de cada cóctel.
+    3.  **Configuración de Bombas**: Ajuste de calibración y tiempos de las 4 bombas peristálticas.
+
+[![Firmware Principal](https://img.shields.io/badge/Descargar_Firmware_Principal-Robot_Core-blueviolet?style=flat&logo=arduino)](https://github.com/Albert-Benavent-Cabrera/Robot-Core)
+- **Configuración Remota**: La pantalla recibe cócteles e ingredientes vía ESP-NOW desde la App Drinks (Robot Core). Al modificar valores en los sliders, la configuración se guarda en el servidor de forma remota, no localmente. Muestra datos "Mock" si no hay conexión estable.
+- **Comunicación ESP-NOW**: Comunicación inalámbrica directa con la Máquina de Bebidas. Envía selecciones de bebidas por broadcast.
 - **Sincronización Inteligente de Canal**: Escanea automáticamente la red WiFi objetivo para sintonizar su canal de radio con el receptor.
 
 <p align="center">
@@ -30,11 +36,15 @@ Este proyecto proporciona una implementación base para las **pantallas intelige
 Este proyecto es totalmente compatible con el IDE de Arduino. Sigue estos pasos para configurarlo:
 
 ### 1. 📚 Preparación de Librerías
-Instala las siguientes **3 librerías** desde el **Gestor de Librerías** de Arduino (**Herramientas > Gestionar librerías**):
+
+Instala estas **2 librerías** desde el **Gestor de Librerías** de Arduino (**Herramientas > Gestionar librerías**):
 
 1. **lvgl** (v9.1.0) - Motor de gráficos.
-2. **Arduino_GFX_Library** - Driver de la pantalla.
-3. **GT911** - Driver del panel táctil.
+2. **GT911** - Driver del panel táctil.
+
+Para **Arduino_GFX**, tienes dos opciones:
+*   **Copiarla**: Copia la carpeta `lib/GFX_Library_for_Arduino` de este proyecto a tu carpeta de librerías de Arduino (`Documents/Arduino/libraries/`).
+*   **Descargarla**: Instala **"GFX Library for Arduino"** indicando la versión **1.6.4** desde el Gestor.
 
 > [!IMPORTANT]
 > Si recibes errores tipo `No such file or directory` con cualquiera de estos nombres, es porque falta la librería correspondiente en el gestor de Arduino.

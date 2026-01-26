@@ -101,4 +101,35 @@
   #define TOUCH_MAP_Y2 220 // Adjusted margin (Raw ~224 -> 480)
 #endif
 
+
+// --- Application Defaults (Mocks) ---
+#define SYNC_RETRY_INTERVAL_MS 5000
+
+#include <vector>
+#include "models.hpp"
+
+inline std::vector<ICocktail> getDefaultMockCocktails() {
+    return {
+        {"Cocacola", nullptr, 0xFF0000, {{"Cocacola", 1, 200}}},
+        {"Orange Juice", nullptr, 0xFFA500, {{"Orange", 2, 200}}},
+        {"Vodka shot", nullptr, 0x00FFFF, {{"Vodka", 3, 50}}},
+        {"Vodka Coke", nullptr, 0x8B0000, {{"Vodka", 3, 50}, {"Cocacola", 1, 150}}},
+        {"Screwdriver", nullptr, 0xFFD700, {{"Vodka", 3, 50}, {"Orange", 2, 150}}},
+        {"Sex on Beach", nullptr, 0xFF1493, {{"Vodka", 3, 40}, {"Orange", 2, 100}, {"Grenadine", 4, 10}}},
+        {"Tequila Sun", nullptr, 0xFF4500, {{"Tequila", 3, 50}, {"Orange", 2, 120}, {"Grenadine", 4, 10}}},
+        {"Shirley T.", nullptr, 0xFF69B4, {{"Orange", 2, 100}, {"Grenadine", 4, 20}, {"Cocacola", 1, 50}}}
+    };
+}
+
+inline IPumpSettings getDefaultPumpSettings() {
+    IPumpSettings s;
+    for(int i=0; i<4; i++) {
+        s.pwm[i] = 255;
+        s.timeMs[i] = 1600;
+    }
+    s.synced = false;
+    return s;
+}
+
 #endif // CONFIG_HPP
+

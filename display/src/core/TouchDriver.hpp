@@ -7,12 +7,17 @@
 
 #if defined(TOUCH_GT911)
 #include <TAMC_GT911.h>
-inline TAMC_GT911 ts = TAMC_GT911(TOUCH_GT911_SDA, TOUCH_GT911_SCL, TOUCH_GT911_INT, TOUCH_GT911_RST, max(TOUCH_MAP_X1, TOUCH_MAP_X2), max(TOUCH_MAP_Y1, TOUCH_MAP_Y2));
+static TAMC_GT911 ts = TAMC_GT911(TOUCH_GT911_SDA, TOUCH_GT911_SCL, TOUCH_GT911_INT, TOUCH_GT911_RST, max(TOUCH_MAP_X1, TOUCH_MAP_X2), max(TOUCH_MAP_Y1, TOUCH_MAP_Y2));
+/*
+   The usage of inline variables is a C++17 feature. 
+   Since PlatformIO/Arduino might default to C++11/14, we replace inline with static 
+   to avoid warnings/errors while keeping the header-only structure workable (internal linkage).
+*/
 #endif
 
 // --- External Variables ---
-inline int touch_last_x = 0;
-inline int touch_last_y = 0;
+static int touch_last_x = 0;
+static int touch_last_y = 0;
 
 // --- Module Interface ---
 inline void touch_init() {

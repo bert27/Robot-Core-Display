@@ -7,40 +7,60 @@
 #include <esp_now.h>
 #include <WiFi.h>
 #include "remote_protocol.hpp"
+#include "DataManager.hpp"
 
-// Static callback for ESP-NOW (defined as inline to allow header-only usage)
-inline void onDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+// Static callback for ESP-NOW
+static void onDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
     if (status == ESP_NOW_SEND_SUCCESS) {
-        printf("[ESP-NOW] Delivery Success! (ACK received)\n");
+        printf("[ESP-NOW] Delivery Success to %02X:%02X:%02X:%02X:%02X:%02X\n", 
+               mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
     } else {
-        printf("[ESP-NOW] Delivery Fail (No receiver found on this channel)\n");
+        printf("[ESP-NOW] Delivery Fail to %02X:%02X:%02X:%02X:%02X:%02X (No ACK received)\n", 
+               mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
     }
 }
 
-// Global state for sync (declared as inline for header-only)
-inline struct_message last_sync_data;
-inline unsigned long last_sync_time = 0;
-inline bool is_server_connected = false;
-inline std::function<void(const RecipeSyncData&)> on_recipe_recv_cb = nullptr;
+// Global state for sync (static to prevent multiple definition errors)
+static struct_message last_sync_data;
+static unsigned long last_sync_time = 0;
+static bool is_server_connected = false;
+static std::function<void(const RecipeSyncData&)> on_recipe_recv_cb = nullptr;
 
-inline void onDataRecv(const esp_now_recv_info_t *recv_info, const uint8_t *data, int len) {
+// Conditional Signature for ESP-IDF 5.x / Arduino ESP32 v3.0+ vs Legacy
+#if defined(ESP_ARDUINO_VERSION_MAJOR) && ESP_ARDUINO_VERSION_MAJOR >= 3
+static void onDataRecv(const esp_now_recv_info_t *info, const uint8_t *data, int len) {
+    const uint8_t *mac = info->src_addr; 
+#else
+static void onDataRecv(const uint8_t *mac, const uint8_t *data, int len) {
+#endif
+    printf("[ESP-NOW] Packet Recv from %02X:%02X:%02X:%02X:%02X:%02X | Len: %d\n", 
+           mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], len);
+    
     if (len == sizeof(struct_message)) {
         struct_message msg;
         memcpy(&msg, data, sizeof(msg));
+        printf("[ESP-NOW] Message ID: %d\n", msg.id);
         
-        if (msg.id == REMOTE_CMD_SYNC_RESPONSE) { // Sync Response
+        if (msg.id == REMOTE_CMD_SYNC_RESPONSE) { // Sync Response (Pumps)
             last_sync_data = msg;
             last_sync_time = millis();
             is_server_connected = true;
-            printf("[ESP-NOW] Pump data received from server!\n");
+            DataManager::getInstance().updatePumps(msg.pumpValues);
+            printf("[ESP-NOW] Pump data cached in DataManager.\n");
         }
         else if (msg.id == REMOTE_CMD_RECIPE_DATA) { // Recipe Part Received
             is_server_connected = true;
             last_sync_time = millis(); // Alive
+            printf("[ESP-NOW] Recipe Part Recv: %s (%d/%d)\n", msg.recipeData.name, msg.recipeData.index, msg.recipeData.total);
+            
+            DataManager::getInstance().addRecipe(msg.recipeData);
+            
             if (on_recipe_recv_cb) {
                 on_recipe_recv_cb(msg.recipeData);
             }
         }
+    } else {
+        printf("[ESP-NOW] Size mismatch or noise. Ignoring.\n");
     }
 }
 
@@ -57,6 +77,8 @@ public:
         esp_wifi_set_ps(WIFI_PS_NONE); // Disable power save to prevent display flickering
         WiFi.disconnect();
 
+
+
         // Sync channel with the target network defined in secrets.h
         printf("[ESP-NOW] Searching for network: %s\n", TARGET_WIFI_SSID);
         
@@ -64,13 +86,13 @@ public:
         int32_t channel = getWiFiChannel(TARGET_WIFI_SSID);
         
         if (channel > 0) {
-            printf("[ESP-NOW] Found network on channel %d. Switching radio...\n", (int)channel);
+            printf("[ESP-NOW] Found network '%s' on channel %d. Switching radio...\n", TARGET_WIFI_SSID, (int)channel);
             
             esp_wifi_set_promiscuous(true);
             esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE);
             esp_wifi_set_promiscuous(false);
         } else {
-            printf("[ESP-NOW] Network not found. Defaulting to channel 1.\n");
+            printf("[ESP-NOW] Network '%s' not found. Defaulting to channel 1. (Check secrets.h)\n", TARGET_WIFI_SSID);
             channel = 1;
         }
 
@@ -84,7 +106,7 @@ public:
         esp_now_register_recv_cb(onDataRecv);
 
         printf("[ESP-NOW] Init OK. MAC: %s\n", WiFi.macAddress().c_str());
-        printf("[ESP-NOW] Radio Sintonized - Channel: %d (Target: %d)\n", (int)WiFi.channel(), (int)channel);
+        printf("[ESP-NOW] Current Radio Channel: %d (Target: %d)\n", (int)WiFi.channel(), (int)channel);
 
         // Register peer
         esp_now_peer_info_t peerInfo;
@@ -94,7 +116,7 @@ public:
         peerInfo.encrypt = false;
         
         if (esp_now_add_peer(&peerInfo) != ESP_OK) {
-            printf("[ESP-NOW] Failed to add peer\n");
+            printf("[ESP-NOW] Failed to add Peer Broadcast\n");
             return false;
         }
 
@@ -135,12 +157,54 @@ public:
         msg.id = REMOTE_CMD_DRINK_ORDER; 
         strncpy(msg.choose, drinkName.c_str(), sizeof(msg.choose) - 1);
         
+        printf("[ESP-NOW] Sending Drink Order: %s ... ", drinkName.c_str());
         esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &msg, sizeof(msg));
         
         if (result == ESP_OK) {
-            printf("[ESP-NOW] Command sent: %s\n", drinkName.c_str());
+            printf("Queued OK\n");
         } else {
-            printf("[ESP-NOW] Send error!\n");
+            printf("Error! (Code: %d)\n", result);
+        }
+    }
+
+    void sendPumpCalibration(int pumpId, int pwm, int timeMs) {
+        struct_message msg;
+        memset(&msg, 0, sizeof(msg));
+        
+        msg.id = REMOTE_CMD_PUMP_UPDATE;
+        // Server expects: "pump:ID:PWM:TIME_FLOAT"
+        // We have time in MS. Convert to seconds.
+        float timeSec = timeMs / 1000.0f;
+        
+        char cmd[64];
+        snprintf(cmd, sizeof(cmd), "pump:%d:%d:%.2f", pumpId, pwm, timeSec);
+        
+        strncpy(msg.choose, cmd, sizeof(msg.choose) - 1);
+        
+        printf("[ESP-NOW] Sending Pump Update: %s ... ", cmd);
+        esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &msg, sizeof(msg));
+        
+        if (result == ESP_OK) {
+            printf("OK\n");
+        } else {
+            printf("Error! (%d)\n", result);
+        }
+    }
+
+    void sendRecipeUpdate(const RecipeSyncData& data) {
+        struct_message msg;
+        memset(&msg, 0, sizeof(msg));
+        
+        msg.id = REMOTE_CMD_RECIPE_UPDATE;
+        msg.recipeData = data; // Copy data
+        
+        printf("[ESP-NOW] Sending Recipe Update: %s ... ", data.name);
+        esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &msg, sizeof(msg));
+        
+        if (result == ESP_OK) {
+            printf("OK\n");
+        } else {
+            printf("Error! (%d)\n", result);
         }
     }
 
@@ -158,7 +222,7 @@ private:
         return 0;
     }
     
-    inline static uint8_t broadcastAddress[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+    uint8_t broadcastAddress[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 };
 
 #endif // ESPNOW_MANAGER_HPP

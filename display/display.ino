@@ -1,7 +1,7 @@
 
 
 #include "src/core/DisplayManager.hpp"
-#include "src/core/MemoryManager.hpp"
+
 
 void setup() {
     // Initialize serial port
@@ -18,8 +18,7 @@ void setup() {
     Serial.println("######################################\n");
     Serial.flush();
 
-    // Initialize NVS (Preferences)
-    MemoryManager::begin();
+
 
     // Get manager instance and start
     if (!DisplayManager::getInstance().begin()) {

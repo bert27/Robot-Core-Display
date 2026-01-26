@@ -5,9 +5,14 @@
 #include "../components/MyTitle.h"
 #include "../assets/icons.h"
 #include "../../core/ESPNowManager.hpp"
+#include "../../core/DataManager.hpp"
 
 static lv_event_cb_t nav_callback = NULL;
-static lv_obj_t * footer_obj = NULL;
+static lv_obj_t* grid_cocktails_cont = NULL;
+static lv_timer_t* cocktails_refresh_timer = NULL;
+static lv_timer_t* sync_retry_timer = NULL;
+static lv_timer_t* status_timer = NULL;
+static unsigned long last_processed_update = 0;
 
 #include "../components/modal/MyModal.hpp"
 
@@ -16,6 +21,7 @@ static char selected_drink[64];
 
 static void confirm_drink_cb(lv_event_t * e) {
     const char * drink = (const char *)lv_event_get_user_data(e);
+    printf("[UI] Confirm button pressed in Modal!\n");
     if (drink) {
         printf("[UI] Confirmed drink: %s\n", drink);
         
@@ -40,13 +46,70 @@ static void drink_event_cb(lv_event_t * e) {
         printf("[UI] Requesting drink: %s. Opening Modal.\n", selected_drink);
         
         char msg[128];
-        snprintf(msg, sizeof(msg), "¿Seguro que quieres pedir un %s?", selected_drink);
+        snprintf(msg, sizeof(msg), "Seguro que quieres pedir un %s?", selected_drink);
         
         create_custom_modal(lv_scr_act(), "CONFIRMAR", msg, confirm_drink_cb, NULL, selected_drink);
         
     } else {
         printf("[UI] Error: Label not found in card container\n");
     }
+}
+
+static void refresh_grid() {
+    if (!grid_cocktails_cont) return;
+    lv_obj_clean(grid_cocktails_cont);
+
+    const auto& recipes = DataManager::getInstance().getRecipes();
+    for(size_t i=0; i < recipes.size(); i++) {
+        const auto& r = recipes[i];
+        create_custom_card(grid_cocktails_cont, r.icon, r.name.c_str(), 220, 135, lv_color_hex(r.color), drink_event_cb, &lv_font_montserrat_20);
+    }
+}
+
+static void refresh_timer_cb(lv_timer_t * t) {
+    if (DataManager::getInstance().getLastUpdate() > last_processed_update) {
+        printf("[Cocktails] Data update detected. Refreshing...\n");
+        last_processed_update = DataManager::getInstance().getLastUpdate();
+        refresh_grid();
+    }
+}
+
+
+
+static void sync_retry_timer_cb(lv_timer_t * t) {
+    // If we are still using mocks, keep asking for real data
+    if (DataManager::getInstance().isUsingMocks()) {
+        printf("[Cocktails] Still using mocks. Retrying Sync Request...\n");
+        ESPNowManager::getInstance().requestRecipeSync();
+        ESPNowManager::getInstance().requestPumpSync();
+    } else {
+        // We have real data! Stop retrying.
+        printf("[Cocktails] Real data detected. Stopping Sync Retry Timer.\n");
+        lv_timer_del(t);
+        sync_retry_timer = NULL;
+    }
+}
+
+static void status_timer_cb(lv_timer_t * t) {
+    lv_obj_t * icon = (lv_obj_t *)lv_timer_get_user_data(t);
+    if (!icon) return;
+
+    // Logic Update: Priority is Data Source, not just Link Heartbeat.
+    // If we have real data (!usingMocks), we are effectively "Online" for the user.
+    if (!DataManager::getInstance().isUsingMocks()) {
+        lv_label_set_text(icon, LV_SYMBOL_WIFI " Online");
+        lv_obj_set_style_text_color(icon, lv_color_hex(0x00FF00), 0);
+    } else {
+        lv_label_set_text(icon, LV_SYMBOL_WARNING " Offline (Mock)");
+        lv_obj_set_style_text_color(icon, lv_color_hex(0xFF8800), 0);
+    }
+}
+
+static void page_cocktails_delete_cb(lv_event_t * e) {
+    printf("[Cocktails] Cleaning up timers.\n");
+    if (cocktails_refresh_timer) { lv_timer_del(cocktails_refresh_timer); cocktails_refresh_timer = NULL; }
+    if (sync_retry_timer) { lv_timer_del(sync_retry_timer); sync_retry_timer = NULL; }
+    if (status_timer) { lv_timer_del(status_timer); status_timer = NULL; }
 }
 
 lv_obj_t* page_cocktails_create(lv_event_cb_t on_nav_click) {
@@ -63,38 +126,70 @@ lv_obj_t* page_cocktails_create(lv_event_cb_t on_nav_click) {
     // Main Title
     create_custom_title(screen, "ROBOT MIXOLOGY");
 
-    // Grid Container
-    lv_obj_t * grid_cont = lv_obj_create(screen);
-    lv_obj_set_size(grid_cont, 740, 300); // Reduced height to 300 (fitted to content)
-    lv_obj_align(grid_cont, LV_ALIGN_CENTER, 0, 0); // Fully centered
-    lv_obj_set_style_bg_opa(grid_cont, LV_OPA_TRANSP, 0);
-    lv_obj_set_style_border_width(grid_cont, 0, 0);
-    lv_obj_set_style_pad_all(grid_cont, 0, 0); 
-    lv_obj_set_scrollbar_mode(grid_cont, LV_SCROLLBAR_MODE_OFF); 
-    
-    static int32_t col_dsc[] = {220, 220, 220, LV_GRID_TEMPLATE_LAST};
-    static int32_t row_dsc[] = {135, 135, 135, LV_GRID_TEMPLATE_LAST}; 
-    lv_obj_set_grid_dsc_array(grid_cont, col_dsc, row_dsc);
-    lv_obj_set_grid_align(grid_cont, LV_GRID_ALIGN_CENTER, LV_GRID_ALIGN_START); 
-    lv_obj_set_style_pad_column(grid_cont, 20, 0); 
-    lv_obj_set_style_pad_row(grid_cont, 20, 0); 
+    // Connection Status Icon
+    lv_obj_t * conn_icon = lv_label_create(screen);
+    lv_obj_align(conn_icon, LV_ALIGN_TOP_RIGHT, -20, 15);
+    lv_obj_set_style_text_font(conn_icon, &lv_font_montserrat_14, 0);
 
-    // Cocktail List (Synchronized with serverEspReact)
-    create_custom_card(grid_cont, ICON_COCKTAIL_COCA_COLA, "Cocacola", 220, 135, lv_color_hex(0xFF0000), drink_event_cb, &lv_font_montserrat_20);
-    create_custom_card(grid_cont, ICON_COCKTAIL_GIN_TONIC, "Orange Juice", 220, 135, lv_color_hex(0xFFA500), drink_event_cb, &lv_font_montserrat_20);
-    create_custom_card(grid_cont, ICON_COCKTAIL_VODKA, "Vodka shot", 220, 135, lv_color_hex(0x00FFFF), drink_event_cb, &lv_font_montserrat_20);
-    create_custom_card(grid_cont, ICON_COCKTAIL_VODKA, "Vodka with Cocacola", 220, 135, lv_color_hex(0x8B0000), drink_event_cb, &lv_font_montserrat_20);
-    create_custom_card(grid_cont, ICON_COCKTAIL_VODKA, "Screwdriver", 220, 135, lv_color_hex(0xFFD700), drink_event_cb, &lv_font_montserrat_20);
-    create_custom_card(grid_cont, ICON_COCKTAIL_SEX_ON_BEACH, "Sex on the beach", 220, 135, lv_color_hex(0xFF1493), drink_event_cb, &lv_font_montserrat_20);
-    create_custom_card(grid_cont, ICON_COCKTAIL_PORN_STAR, "Tequila sunrise", 220, 135, lv_color_hex(0xFF4500), drink_event_cb, &lv_font_montserrat_20);
-    create_custom_card(grid_cont, ICON_COCKTAIL_COCA_COLA, "Shirley Temple", 220, 135, lv_color_hex(0xFF69B4), drink_event_cb, &lv_font_montserrat_20);
-
-    for(int i=0; i<8; i++) {
-         lv_obj_set_grid_cell(lv_obj_get_child(grid_cont, i), LV_GRID_ALIGN_STRETCH, i%3, 1, LV_GRID_ALIGN_STRETCH, i/3, 1);
+    // Initial label
+    if (ESPNowManager::getInstance().isConnected()) {
+        lv_label_set_text(conn_icon, LV_SYMBOL_WIFI " Online");
+        lv_obj_set_style_text_color(conn_icon, lv_color_hex(0x00FF00), 0);
+    } else {
+        lv_label_set_text(conn_icon, LV_SYMBOL_WARNING " Offline (Mock)");
+        lv_obj_set_style_text_color(conn_icon, lv_color_hex(0xFF8800), 0);
     }
 
+    if (status_timer) lv_timer_del(status_timer);
+    status_timer = lv_timer_create(status_timer_cb, 500, conn_icon);
+
+    // Grid Container
+    // Grid/Flex Container
+    grid_cocktails_cont = lv_obj_create(screen);
+    lv_obj_set_size(grid_cocktails_cont, 740, 300); 
+    lv_obj_align(grid_cocktails_cont, LV_ALIGN_CENTER, 0, 0); 
+    lv_obj_set_style_bg_opa(grid_cocktails_cont, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(grid_cocktails_cont, 0, 0);
+    lv_obj_set_style_pad_all(grid_cocktails_cont, 10, 0); // Padding for aesthetics
+    
+    // Enable Scrolling
+    lv_obj_add_flag(grid_cocktails_cont, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_scrollbar_mode(grid_cocktails_cont, LV_SCROLLBAR_MODE_AUTO);
+    lv_obj_set_scroll_dir(grid_cocktails_cont, LV_DIR_VER);
+
+    // Use Flex Layout (Responsive Row Wrap)
+    lv_obj_set_flex_flow(grid_cocktails_cont, LV_FLEX_FLOW_ROW_WRAP);
+    lv_obj_set_flex_align(grid_cocktails_cont, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
+    lv_obj_set_style_pad_column(grid_cocktails_cont, 20, 0); // Gap X
+    lv_obj_set_style_pad_row(grid_cocktails_cont, 20, 0);    // Gap Y 
+
+    // Register cleanup
+    lv_obj_add_event_cb(screen, page_cocktails_delete_cb, LV_EVENT_DELETE, NULL);
+
+    // Initial Sync/Mock logic
+    if (!DataManager::getInstance().isRecipesSynced() || DataManager::getInstance().getRecipes().empty()) {
+        printf("[Cocktails] Cache empty. Loading fallback mocks & Starting Sync Retry.\n");
+        DataManager::getInstance().loadMocks(); // Proactive load
+        
+        // Trigger first sync immediately
+        ESPNowManager::getInstance().requestRecipeSync();
+        ESPNowManager::getInstance().requestPumpSync();
+    }
+
+    // Initial draw
+    refresh_grid();
+    last_processed_update = DataManager::getInstance().getLastUpdate();
+
+    // Start Retry Timer (checks every 5s if we are still on mocks)
+    if (sync_retry_timer) lv_timer_del(sync_retry_timer);
+    sync_retry_timer = lv_timer_create(sync_retry_timer_cb, SYNC_RETRY_INTERVAL_MS, NULL);
+
+    // Dynamic refresh timer
+    cocktails_refresh_timer = lv_timer_create(refresh_timer_cb, 500, NULL);
+
     // Footer Container using MyFooter component
-    footer_obj = create_custom_footer(screen, ICON_NAV_SETTINGS, on_nav_click);
+    create_custom_footer(screen, ICON_NAV_SETTINGS, on_nav_click);
 
     return screen;
 }
+

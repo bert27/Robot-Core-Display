@@ -94,11 +94,13 @@ public:
         lv_indev_set_type(indev, LV_INDEV_TYPE_POINTER);
         lv_indev_set_read_cb(indev, touchpad_read_cb);
 
+        printf("Initializing ESP-NOW Manager...\n");
+        if (!ESPNowManager::getInstance().begin()) {
+            printf("WARNING: ESP-NOW Init failed. Running in Offline/Mock mode.\n");
+        }
+
         printf("Initializing UI...\n");
         ui_init();
-
-        printf("Initializing ESP-NOW Manager...\n");
-        ESPNowManager::getInstance().begin();
 
         printf("System ready\n");
         return true;

@@ -53,12 +53,28 @@ inline void create_custom_modal(lv_obj_t * parent, const char * title, const cha
     lv_obj_set_style_text_font(lbl_title, &lv_font_montserrat_20, 0);
     lv_obj_set_style_text_color(lbl_title, lv_color_hex(0xFFA500), 0); // Orange
 
-    // 4. Message
-    lv_obj_t * lbl_msg = lv_label_create(mbox);
+    // 4. Message Area (Icon + Text)
+    lv_obj_t * msg_cont = lv_obj_create(mbox);
+    lv_obj_set_size(msg_cont, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_obj_set_style_bg_opa(msg_cont, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(msg_cont, 0, 0);
+    lv_obj_set_style_pad_all(msg_cont, 0, 0);
+    lv_obj_set_flex_flow(msg_cont, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(msg_cont, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_column(msg_cont, 10, 0); // Gap between icon and text
+
+    // Icon
+    lv_obj_t * icon_lbl = lv_label_create(msg_cont);
+    lv_label_set_text(icon_lbl, "?"); // Use literal "?" since LV_SYMBOL_QUESTION is missing
+    lv_obj_set_style_text_font(icon_lbl, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_color(icon_lbl, lv_color_hex(0x00A0FF), 0); // Blue Question Mark
+
+    // Text Message
+    lv_obj_t * lbl_msg = lv_label_create(msg_cont);
     lv_label_set_text(lbl_msg, message);
     lv_label_set_long_mode(lbl_msg, LV_LABEL_LONG_WRAP);
-    lv_obj_set_width(lbl_msg, LV_PCT(90));
-    lv_obj_set_style_text_align(lbl_msg, LV_TEXT_ALIGN_CENTER, 0);
+    lv_obj_set_width(lbl_msg, 280); // Fixed width to allow wrapping within modal
+    lv_obj_set_style_text_align(lbl_msg, LV_TEXT_ALIGN_LEFT, 0);
     lv_obj_set_style_text_font(lbl_msg, &lv_font_montserrat_16, 0);
     lv_obj_set_style_text_color(lbl_msg, lv_color_white(), 0);
 
@@ -79,10 +95,10 @@ inline void create_custom_modal(lv_obj_t * parent, const char * title, const cha
     lv_obj_center(lbl_cancel);
     
     // Add event to close modal + user callback
-    lv_obj_add_event_cb(btn_cancel, modal_close_cb, LV_EVENT_CLICKED, overlay);
     if (on_cancel) {
         lv_obj_add_event_cb(btn_cancel, on_cancel, LV_EVENT_CLICKED, user_data);
     }
+    lv_obj_add_event_cb(btn_cancel, modal_close_cb, LV_EVENT_CLICKED, overlay);
 
     // Confirm Button
     lv_obj_t * btn_confirm = lv_btn_create(btn_cont);
@@ -93,10 +109,10 @@ inline void create_custom_modal(lv_obj_t * parent, const char * title, const cha
     lv_obj_center(lbl_confirm);
     
     // Add event to close modal + user callback
-    lv_obj_add_event_cb(btn_confirm, modal_close_cb, LV_EVENT_CLICKED, overlay);
     if (on_confirm) {
         lv_obj_add_event_cb(btn_confirm, on_confirm, LV_EVENT_CLICKED, user_data);
     }
+    lv_obj_add_event_cb(btn_confirm, modal_close_cb, LV_EVENT_CLICKED, overlay);
 }
 
 #endif // MY_MODAL_HPP
